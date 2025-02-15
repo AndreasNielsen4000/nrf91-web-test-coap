@@ -1,9 +1,35 @@
 // importing packages
 const express = require('express');
 const coap = require('coap');
+const fs = require('fs');
+const csv = require('csv-parser');
 const server = coap.createServer();
 
 const router = express.Router();
+
+let cellTowers = [];
+
+// Load cell towers data from CSV files
+function loadCellTowers() {
+    fs.createReadStream('combined_filenames.csv')
+        .pipe(csv())
+        .on('data', (row) => {
+            cellTowers.push(row);
+        })
+        .on('end', () => {
+            console.log('Cell towers data loaded.');
+        });
+}
+
+// Lookup function to find longitude and latitude based on MCC, MNC, TAC, and Cell ID
+function lookupCellTower(mcc, mnc, tac, cellId) {
+    return cellTowers.find(tower => 
+        tower.mcc == mcc && 
+        tower.net == mnc && 
+        tower.area == tac && 
+        tower.cell == cellId
+    );
+}
 
 router.post(`/`, (httpReq, httpRes) => {
 	const req = coap.request(httpReq.body.targetURL)
@@ -32,8 +58,31 @@ router.post(`/`, (httpReq, httpRes) => {
 	req.end();
 });
 
+router.post('/', (httpReq, httpRes) => {
+    const req = coap.request(httpReq.body.targetURL)
+    req.on('response', (res) => {
+        res.on('locationcell', (chunk)=> {
+            let dataRaw = chunk.toString().split("\n");
+            
+            const tower = lookupCellTower(mcc, mnc, tac, cellId);
+            
+            if (tower) {
+                let dataOut = {
+                    latlng: [tower.lat, tower.lon, tower.range],
+                    time: new Date().toISOString(),
+                };
+                httpRes.status(200).json(dataOut);
+            } else {
+                httpRes.status(400).json({ error: 'Invalid data format' });
+                console.warn('Invalid target URL');
+            }
+        });
+    })
 
+    req.end();
+});
 
+loadCellTowers();
 
 function validateData(data) {
     // valid data should look like this:

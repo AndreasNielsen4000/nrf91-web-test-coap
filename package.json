@@ -11,7 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "coap": "^1.0.11",
-    "express": "^4.18.1"
+    "express": "^4.18.1",
+    "csv-parser": "^3.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.20"
