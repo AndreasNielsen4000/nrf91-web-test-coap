@@ -149,47 +149,6 @@ function getData() {
 	});
 }
 
-// Add function to handle location data
-function getLocationData() {
-	$.ajax({
-		type: "POST",
-		url: "/locationcell",
-		data: JSON.stringify({targetURL}),
-		contentType: 'application/json',
-		dataType: 'json',
-		timeout: 2000,
-		success: response => {
-			const latlng = [response.latitude, response.longitude, response.range];
-			const timestamp = response.time;
-			const marker = L.marker(latlng, {
-				icon: L.icon({
-					iconUrl: '/images/icons8-location-50.png',
-					iconSize: [34, 34],
-					iconAnchor: [17, 17]
-				})
-			})
-				.addTo(leafletMap)
-				.bindPopup("Lat: " + latlng[0] + " Lng: " + latlng[1] + " Range: " + latlng[2]
-					+ "<br>Time: " + timestamp, {
-			});
-
-			markers.push(marker);
-			leafletMap.setView(latlng);
-			if (markers.length > markerStackSize) {
-				clearMarker(markers[0]);
-			}
-		},
-		error: e => {
-			showToast("Location Data Error",
-				'',
-				"Failed to retrieve location data.",
-				'Error',
-				10000,
-			);
-		}
-	});
-}
-
 function updateConnectButton() {
     // Enable/disable button
     if (checkValidURL(targetURL)) {

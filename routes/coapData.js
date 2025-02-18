@@ -1,35 +1,9 @@
 // importing packages
 const express = require('express');
 const coap = require('coap');
-const fs = require('fs');
-const csv = require('csv-parser');
 const server = coap.createServer();
 
 const router = express.Router();
-
-let cellTowers = [];
-
-// Load cell towers data from CSV files
-function loadCellTowers() {
-    fs.createReadStream('combined_filenames.csv')
-        .pipe(csv())
-        .on('data', (row) => {
-            cellTowers.push(row);
-        })
-        .on('end', () => {
-            console.log('Cell towers data loaded.');
-        });
-}
-
-// Lookup function to find longitude and latitude based on MCC, MNC, TAC, and Cell ID
-function lookupCellTower(mcc, mnc, tac, cellId) {
-    return cellTowers.find(tower => 
-        tower.mcc == mcc && 
-        tower.net == mnc && 
-        tower.area == tac && 
-        tower.cell == cellId
-    );
-}
 
 router.post(`/`, (httpReq, httpRes) => {
 	const req = coap.request(httpReq.body.targetURL)
@@ -37,20 +11,30 @@ router.post(`/`, (httpReq, httpRes) => {
 	req.on('response', (res) => {
         res.on('data', (chunk)=> {
             let dataRaw = chunk.toString().split("\n");
-            
-            let validData = validateData(dataRaw);
+            if (check_gps_scell_data(dataRaw)) {
+                
+                let validData = validateData(dataRaw);
 
-            // if valid, this VVV else error+warn
-            if (validData) {
+                // if valid, this VVV else error+warn
+                if (validData) {
+                    let dataOut = {
+                        latlng: dataRaw[0].split(","),
+                        acc: Number(dataRaw[1].split(" ")[0]),
+                        time: dataRaw[2],
+                    };
+                    httpRes.status(200).json(dataOut);
+                } else {
+                    httpRes.status(400);
+                    console.warn('Invalid target URL');
+                }
+            }
+            else {
+                let location = get_scell_location(dataRaw);
                 let dataOut = {
-                    latlng: dataRaw[0].split(","),
-                    acc: Number(dataRaw[1].split(" ")[0]),
-                    time: dataRaw[2],
-                };
-                httpRes.status(200).json(dataOut);
-            } else {
-                httpRes.status(400);
-                console.warn('Invalid target URL');
+                    latlng: [location[0], location[1]],
+                    acc: location[2],
+                    time: new Date().toISOString(),
+                }
             }
         });
 	})
@@ -58,38 +42,38 @@ router.post(`/`, (httpReq, httpRes) => {
 	req.end();
 });
 
-router.post('/', (httpReq, httpRes) => {
-    const req = coap.request(httpReq.body.targetURL)
-    req.on('response', (res) => {
-        res.on('locationcell', (chunk)=> {
-            let dataRaw = chunk.toString().split("\n");
-            
-            const tower = lookupCellTower(mcc, mnc, tac, cellId);
-            
-            if (tower) {
-                let dataOut = {
-                    latlng: [tower.lat, tower.lon, tower.range],
-                    time: new Date().toISOString(),
-                };
-                httpRes.status(200).json(dataOut);
-            } else {
-                httpRes.status(400).json({ error: 'Invalid data format' });
-                console.warn('Invalid target URL');
-            }
-        });
-    })
+function check_gps_scell_data(data) {
+    // Check if the data is GPS or SCell data. If it is GPS data, return true, else return false.
+    return data[1].includes('m');
+}
 
-    req.end();
-});
-
-loadCellTowers();
+function get_scell_location(data) {
+    radio = data[0];
+    mcc = data[1];
+    mnc = data[2];
+    lac = data[3];
+    cid = data[4];
+    api_token = "pk.e0a04c0b0f5116d10ca99414e9127044";
+    var settings = {
+        "async": true,
+        "crossDomain": true,
+        "url": "https://eu1.unwiredlabs.com/v2/process",
+        "method": "POST",
+        "headers": {},
+        "processData": false,
+        "data": "{\"token\": \"" + api_token + "\",\"radio\": " + radio + ",\"mcc\": " + mcc + ",\"mnc\": " + mnc + ",\"cells\": [{\"lac\": " + lac + ",\"cid\": " + cid + "}],\"address\": 0}"
+      }
+    $.ajax(settings).done(function (response) {
+        return [response.lat, response.lon, response.accuracy];
+    });
+}
 
 function validateData(data) {
     // valid data should look like this:
     // [ '59.923513,10.668951', '29.5 m', '2022-10-11 17:06:332' ]    
 
     let latlngRegex = /[-]?([0-9]*[.])?[0-9]+,[-]?([0-9]*[.])?[0-9]+/ig;
-    let accuracyRegex = /([0-9]*[.])?[0-9]+ m/
+    let accuracyRegex = /([0-9]*[.])?[0-9]+ m/;
     let date = new Date(data[2]);
 
     return data.length === 3 &&
