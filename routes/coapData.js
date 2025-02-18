@@ -48,7 +48,6 @@ function check_gps_scell_data(data) {
 }
 
 function get_scell_location(data) {
-    radio = data[0];
     mcc = data[1];
     mnc = data[2];
     lac = data[3];
@@ -61,7 +60,7 @@ function get_scell_location(data) {
         "method": "POST",
         "headers": {},
         "processData": false,
-        "data": "{\"token\": \"" + api_token + "\",\"radio\": " + radio + ",\"mcc\": " + mcc + ",\"mnc\": " + mnc + ",\"cells\": [{\"lac\": " + lac + ",\"cid\": " + cid + "}],\"address\": 0}"
+        "data": "{\"token\": \"" + api_token + "\",\"radio\": \"lte\",\"mcc\": " + mcc + ",\"mnc\": " + mnc + ",\"cells\": [{\"lac\": " + lac + ",\"cid\": " + cid + "}],\"address\": 0}"
       }
     $.ajax(settings).done(function (response) {
         return [response.lat, response.lon, response.accuracy];
