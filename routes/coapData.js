@@ -54,10 +54,10 @@ function check_gps_scell_data(data) {
 }
 
 function get_scell_location(data) {
-    mcc = data[1];
-    mnc = data[2];
-    lac = data[3];
-    cid = data[4];
+    mcc = data[0];
+    mnc = data[1];
+    lac = data[2];
+    cid = data[3];
     api_token = "pk.e0a04c0b0f5116d10ca99414e9127044";
     var settings = {
         "async": true,
