@@ -143,6 +143,10 @@ function getData() {
 				'Error',
 				10000,
 			);
+			// print specific error out on web page
+			const errorMessageElement = document.getElementById('error-message');
+			errorMessageElement.textContent = `Error: ${e.statusText || 'Unknown error'}`;
+			errorMessageElement.style.display = 'block';
 
 			stopPolling();
 		} 
