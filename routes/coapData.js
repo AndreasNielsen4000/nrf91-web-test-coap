@@ -30,11 +30,17 @@ router.post(`/`, (httpReq, httpRes) => {
             }
             else {
                 let location = get_scell_location(dataRaw);
-                let dataOut = {
-                    latlng: [location[0], location[1]],
-                    acc: location[2],
-                    time: new Date().toISOString(),
-                }
+                if (location) {
+                    let dataOut = {
+                        latlng: [location[0], location[1]],
+                        acc: location[2],
+                        time: new Date().toISOString(),
+                    };
+                    httpRes.status(200).json(dataOut); 
+                } else {
+                    httpRes.status(400);
+                    console.warn('Invalid target URL');
+                }   
             }
         });
 	})
