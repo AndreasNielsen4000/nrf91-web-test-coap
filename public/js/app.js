@@ -140,13 +140,9 @@ function getData() {
 			showToast("COAP Connection Error",
 				'',
 				"Connection Failed, Ensure COAP target is correct and try to connect again.",
-				'Error',
+				'Error: ' + e.statusText || 'Unknown error',
 				10000,
 			);
-			// print specific error out on web page
-			const errorMessageElement = document.getElementById('error-message');
-			errorMessageElement.textContent = `Error: ${e.statusText || 'Unknown error'}`;
-			errorMessageElement.style.display = 'block';
 
 			stopPolling();
 		} 
