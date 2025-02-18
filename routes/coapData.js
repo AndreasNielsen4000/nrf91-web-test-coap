@@ -50,7 +50,7 @@ router.post(`/`, (httpReq, httpRes) => {
 
 function check_gps_scell_data(data) {
     // Check if the data is GPS or SCell data. If it is GPS data, return true, else return false.
-    return data[1].includes('m');
+    return false
 }
 
 function get_scell_location(data) {
