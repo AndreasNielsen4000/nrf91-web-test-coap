@@ -96,7 +96,7 @@ function initPolling() {
 
 	intervalTimer = setInterval(() => {
 		getData();
-	}, 4000);
+	}, 60000);
 }
 
 function getData() {
@@ -112,7 +112,7 @@ function getData() {
 			if (lastTime !== response.time) {
 				const temp = new Date(response.time);
 				const timestamp = new Date(Date.UTC(temp.getFullYear(), temp.getMonth(), temp.getDate(), temp.getHours(), temp.getMinutes(), temp.getSeconds()));
-
+				console.log(response.latlng, response.acc, response.time);
 				lastTime = response.time;
 				const marker = L.marker(response.latlng, {
 					icon: L.icon({
